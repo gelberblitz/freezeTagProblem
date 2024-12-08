@@ -70,6 +70,7 @@ public class Roboter extends Circle {
 
     public void setState(boolean b) {
         this.state = b;
+        this.setFill(state ? Color.GREEN : Color.RED);
     }
 
     public void setPosition(Position position) {
