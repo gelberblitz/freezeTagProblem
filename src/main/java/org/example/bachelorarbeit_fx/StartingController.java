@@ -178,4 +178,46 @@ public class StartingController implements Initializable {
 
                 if(euclideanDistance < shortestDistance){
                     shortestDistance = euclideanDistance;
-                    n
+                    nextRobot = robot;
+                }
+            }
+        }
+        if(nextRobot != null){
+            nextRobot.setTargeted(true);
+            return nextRobot;
+        }else{
+            return null;
+        }
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+    }
+}
+
+/*
+0.0 0.0
+1.0 0.0
+0.0 1.0
+-1.0 0.0
+0.0 -1.0
+ */
+
+/*
+0.0 0.0
+-0.65 0.34
+0.47 -0.48
+-0.92 0.06
+0.59 0.32
+-0.45 -0.54
+0.73 -0.12
+-0.34 0.29
+0.14 -0.85
+-0.68 0.29
+0.87 -0.10
+-0.15 -0.72
+0.46 0.36
+-0.72 0.10
+0.28 0.62
+-0.58 -0.29
+ */

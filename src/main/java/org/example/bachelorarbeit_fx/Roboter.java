@@ -59,4 +59,24 @@ public class Roboter extends Circle {
     public Node getStyleableNode() {
         return this;
     }
+
+    public Position getPosition() {
+        return this.position;
+    }
+
+    public void setDistance(double v) {
+        this.distance = v;
+    }
+
+    public void setState(boolean b) {
+        this.state = b;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
+    }
+
+    public boolean getState() {
+        return this.state;
+    }
 }
