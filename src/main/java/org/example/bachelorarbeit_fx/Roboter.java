@@ -8,7 +8,7 @@ public class Roboter extends Circle {
     private Position position;
 
     private int id;
-    private int idCounter = 1;
+    private static int idCounter = 0;
     private boolean state;
     private boolean isTargeted;
 
@@ -28,15 +28,15 @@ public class Roboter extends Circle {
         this.setFill(state ? Color.GREEN : Color.RED);
         this.distance = 0;
         this.lastPosition = new Position(position.getX1(), position.getX2());
-        setIdCounter();
+        this.id = setIdCounter();
     }
     public boolean isTargeted() {
         return isTargeted;
     }
 
-    public void setIdCounter(){
-        this.id = idCounter;
+    public int setIdCounter(){
         idCounter++;
+        return idCounter;
     }
 
     public int getRoboterId(){

@@ -114,17 +114,18 @@ public class StartingController implements Initializable {
         // init Roboter soll ersten aufwecken und dann soll er und jeder
         // der zusätzlich aktiviert werden rekursiv andere aufwecken
         if(!listeRoboter.isEmpty()){
+            //hier kann man auch andere Methoden zu suchen einfügen
             startDynamicSearch(r1);
         }else {
             System.out.println("Es wurden keine Roboter übergeben");
-        }
-        for(Roboter r : listeRoboter){
-            System.out.println("Roboter: " + r.getId() + " " + r.getDistance());
         }
     }
 
     private void startDynamicSearch(Roboter roboter) {
         Roboter nextRoboter = findNextInactiveRoboter(roboter);
+        if(nextRoboter != null){
+            listeRoboter.add(nextRoboter);
+        }
 
         if(nextRoboter == null){
             // Sinnvoll?
@@ -135,13 +136,12 @@ public class StartingController implements Initializable {
         double distX = nextRoboter.getPosition().getX1() - roboter.getPosition().getX1();
         double distY = nextRoboter.getPosition().getX2() - roboter.getPosition().getX2();
         double distance = Math.sqrt(distX * distX + distY * distY);
-        System.out.println("Distanz: " + distance );
 
         roboter.setDistance(roboter.getDistance() + distance);
         Position pos = new Position(roboter.getPosition().getX1(), roboter.getPosition().getX2());
         roboter.setLastPosition(pos);
 
-        System.out.println("Roboter: " + roboter.getRoboterId() + "  Distanz: " + (roboter.getDistance() / 250) + "Einheiten");
+        //System.out.println("Roboter: " + roboter.getRoboterId() + "  Distanz: " + (roboter.getDistance() / 250) + "Einheiten");
 
 
         // Translate Action
@@ -155,6 +155,11 @@ public class StartingController implements Initializable {
             nextRoboter.setState(true);
 
             roboter.setPosition(nextRoboter.getPosition());
+
+
+            for(Roboter r : listeRoboter){
+                System.out.println("Roboter: " + r.getRoboterId() + " " + r.getDistance()/250);
+            }
 
             waitForResume(() -> {
                 startDynamicSearch(roboter);
@@ -193,6 +198,7 @@ public class StartingController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
     }
+
 }
 
 /*
