@@ -1,26 +1,44 @@
 package org.example.bachelorarbeit_fx;
 
 public class Position {
-    private double x1;
-    private double x2;
+    double x;
+    double y;
 
-    public Position(double x1, double x2) {
-        this.x1 = x1;
-        this.x2 = x2;
+    public Position(double x, double y) {
+        this.x = x;
+        this.y = y;
     }
 
-    public double getX1() {
-        return x1;
+    public Position(double winkel) {
+        // deg to rad
+        this.x = Math.cos(winkel*Math.PI/180.0);
+        this.y = Math.sin(winkel*Math.PI/180.0);
+
+        // auf 0 runden ...
+        if (Math.abs(this.x)<0.0001) this.x = 0;
+        if (Math.abs(this.y)<0.0001) this.y = 0;
     }
 
-    public double getX2() {
-        return x2;
+
+    public double update(Position other) {
+        double distance = distance(other);
+
+        this.x = other.x;
+        this.y = other.y;
+
+        return distance;
     }
 
-    public void setX2(double d) {
-        this.x2 += d;
+    protected double distance(Position other) {
+        return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
     }
-    public void setX1(double v) {
-        this.x1 += v;
+
+    public String toString() {
+        return x+","+y;
+    }
+
+    public double asAngel() {
+        double angle = Math.toDegrees(Math.atan2(y, x));
+        return angle;
     }
 }

@@ -3,6 +3,7 @@ module org.example.bachelorarbeit_fx {
     requires javafx.fxml;
 
     requires org.kordamp.bootstrapfx.core;
+    requires java.desktop;
 
     opens org.example.bachelorarbeit_fx to javafx.fxml;
     exports org.example.bachelorarbeit_fx;
