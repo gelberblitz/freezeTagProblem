@@ -194,7 +194,16 @@ public class Solve {
 
 
         // falsch -> wenn 0 nicht den weitestens gefunden hat, dann ist das ein problem
-        rMaxDistance = (list.get(0).id.equals("0")) ? list.get(1) : list.get(0);
+        if(list.get(0).id.equals("0")){
+            rMaxDistance = list.get(1);
+        }else{
+            if(list.get(0).history.size() < list.get(1).history.size()){
+                rMaxDistance = list.get(0);
+            }else{
+                rMaxDistance = list.get(1);
+            }
+        }
+        //rMaxDistance = (list.get(0).id.equals("0")) ? list.get(1) : list.get(0);
 
         if(rMaxDistance != null) {
             // probiere 1. Verschiebung so oft wie es schlechter wird (beide richtungen prüfen)
