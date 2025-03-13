@@ -15,6 +15,10 @@ public class Robot extends Circle
     boolean sleeping;
     double distanceMoved;
 
+    public double getDistanceMoved() {
+        return distanceMoved;
+    }
+
     // remember movements
     ArrayList<String> history;
 

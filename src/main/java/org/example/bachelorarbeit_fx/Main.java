@@ -66,7 +66,11 @@ public class Main extends Application {
         int sampleSize = 0;
         // anzahl der roboter für das beispiel
         int numbRoboter = 0;
-        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/basti/BA_FTP/instance/5_1000.txt"))){
+
+        // startzeit
+        long startZeit = System.currentTimeMillis();
+
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/basti/BA_FTP/instance/5_1.txt"))){
             sampleSize = Integer.parseInt(bufferedReader.readLine());
             numbRoboter = Integer.parseInt(bufferedReader.readLine());
 
@@ -88,82 +92,160 @@ public class Main extends Application {
 
                 Solve solve = new Solve();
                 solve.setInitialRobotsAll(initialRobots);
+                solve.setForImage(stage, initialRobots, circle, pane);
                 solve.run();
 
-
-
-                RobotMap mapShortestSol = solve.getMapShortestSol();
-                List<Paint> colorRobot = new ArrayList<>();
-                List<Line> lines = new ArrayList<>();
-                List<Paint> colorList = new ArrayList<>();
-                for (Map.Entry<String, Robot> entry : mapShortestSol.robots.entrySet()) {
-                    Robot robot = entry.getValue();
-                    Paint stroke = robot.getColor();
-                    colorList.add(stroke);
-
-                    colorRobot.add(stroke);
-                    List<Line> listeLines = robot.listeLines;
-                    for (Line line : listeLines) {
-                        line.setStroke(stroke);
-                        line.setStrokeWidth(5);
-                        lines.add(line);
-                    }
+                // wert dynamisch
+                if(solve.mapShortestSol.getLongestMovedDistance() >= 3.352){
+                    buildScene(stage, solve, initialRobots, circle);
                 }
-
-                // speicher die roboter in einer liste
-                List<Robot> robots = new ArrayList<>();
-                copyRobotsInList(initialRobots, robots);
-
-                // roboter werden der szene hinzugefügt
-                drawRobots(robots, colorRobot);
-
-                //List<Line> lines = solve.listeLines;
-                for(Line line : lines){
-                    pane.getChildren().add(line);
-                }
-
-                double wc_zahl = solve.bestSol;
-                if(wc_zahl >= 3.352){
-                    listOffBestSolutions.put(counter, wc_zahl);
-                }
-
-
-                initialRobots.getAllRobots().stream().forEach(r -> {
-                    Text roboPosition = new Text("" + Math.round((r.position.asAngel()*(-1000)) / 1000));
-
-                    roboPosition.setTextAlignment(TextAlignment.LEFT);
-                    roboPosition.setX(300 + (r.position.x * 250) + 10);
-                    roboPosition.setY(300 + (r.position.y*250)+10);
-                    roboPosition.setStyle("-fx-font-size: 20px; -fx-fill: black;");
-                    pane.getChildren().add(roboPosition);
-                });
-
-
-                Text zahlText = new Text("WC Laenge: " + String.valueOf(wc_zahl));
-
-                zahlText.setTextAlignment(TextAlignment.LEFT);
-                zahlText.setX(pane.getWidth() - 590);
-                zahlText.setY(pane.getHeight() - 10);
-                zahlText.setStyle("-fx-font-size: 20px; -fx-fill: black;");
-
-                // Füge den Text der Pane hinzu
-                pane.getChildren().add(zahlText);
-
-                pane.getChildren().add(circle);
-
-                stage.setResizable(false);
-                stage.setTitle("Freeze Tag Problem");
-                //stage.setScene(new Scene(root, paneWidth, paneHeight));
-                saveStageAsImage(stage);
                 stage.show();
+
+
             }
         }catch (IOException e) {
             System.err.println("Fehler beim Lesen der Datei: " + e.getMessage());
         }
+
+        // enzeit
+        long end = System.currentTimeMillis();
+        System.out.println("Dauer der Berechnung: "  + ((end - startZeit)/1000) + "Sekunden");
+
         System.out.println("ES GIBT " + listOffBestSolutions.size() + " Lösungen, die schlechter als die Gleichverteilung sind");
         for (Integer key : listOffBestSolutions.keySet()) {
             System.out.println(key+1);
         }
+    }
+
+    void buildScene(Stage stage, Solve solve, RobotMap initialRobots, Circle circle) {
+        RobotMap mapShortestSol = solve.getMapShortestSol();
+        List<Paint> colorRobot = new ArrayList<>();
+        List<Line> lines = new ArrayList<>();
+        List<Paint> colorList = new ArrayList<>();
+        for (Map.Entry<String, Robot> entry : mapShortestSol.robots.entrySet()) {
+            Robot robot = entry.getValue();
+            Paint stroke = robot.getColor();
+            colorList.add(stroke);
+
+            colorRobot.add(stroke);
+            List<Line> listeLines = robot.listeLines;
+            for (Line line : listeLines) {
+                line.setStroke(stroke);
+                line.setStrokeWidth(5);
+                lines.add(line);
+            }
+        }
+
+        // speicher die roboter in einer liste
+        List<Robot> robots = new ArrayList<>();
+        copyRobotsInList(initialRobots, robots);
+
+        // roboter werden der szene hinzugefügt
+        drawRobots(robots, colorRobot);
+
+        //List<Line> lines = solve.listeLines;
+        for(Line line : lines){
+            pane.getChildren().add(line);
+        }
+
+        double wc_zahl = solve.bestSol;
+        if(wc_zahl >= 3.352){
+            listOffBestSolutions.put(counter, wc_zahl);
+        }
+
+
+        initialRobots.getAllRobots().stream().forEach(r -> {
+            Text roboPosition = new Text("" + Math.round((r.position.asAngel()*(-1000)) / 1000));
+
+            roboPosition.setTextAlignment(TextAlignment.LEFT);
+            roboPosition.setX(300 + (r.position.x * 250) + 10);
+            roboPosition.setY(300 + (r.position.y*250)+10);
+            roboPosition.setStyle("-fx-font-size: 20px; -fx-fill: black;");
+            pane.getChildren().add(roboPosition);
+        });
+
+
+        Text zahlText = new Text("WC Laenge: " + String.valueOf(wc_zahl));
+
+        zahlText.setTextAlignment(TextAlignment.LEFT);
+        zahlText.setX(pane.getWidth() - 590);
+        zahlText.setY(pane.getHeight() - 10);
+        zahlText.setStyle("-fx-font-size: 20px; -fx-fill: black;");
+
+        // Füge den Text der Pane hinzu
+        pane.getChildren().add(zahlText);
+
+        pane.getChildren().add(circle);
+
+        stage.setResizable(false);
+        stage.setTitle("Freeze Tag Problem");
+        //stage.setScene(new Scene(root, paneWidth, paneHeight));
+        saveStageAsImage(stage);
+    }
+
+    void buildScene2(Stage stage, RobotMap mapShortestSol, RobotMap initialRobots, Circle circle) {
+        List<Paint> colorRobot = new ArrayList<>();
+        List<Line> lines = new ArrayList<>();
+        List<Paint> colorList = new ArrayList<>();
+        for (Map.Entry<String, Robot> entry : mapShortestSol.robots.entrySet()) {
+            Robot robot = entry.getValue();
+            Paint stroke = robot.getColor();
+            colorList.add(stroke);
+
+            colorRobot.add(stroke);
+            List<Line> listeLines = robot.listeLines;
+            for (Line line : listeLines) {
+                line.setStroke(stroke);
+                line.setStrokeWidth(5);
+                lines.add(line);
+            }
+        }
+
+        // speicher die roboter in einer liste
+        List<Robot> robots = new ArrayList<>();
+        copyRobotsInList(initialRobots, robots);
+
+        // roboter werden der szene hinzugefügt
+        drawRobots(robots, colorRobot);
+
+        //List<Line> lines = solve.listeLines;
+        for(Line line : lines){
+            pane.getChildren().add(line);
+        }
+
+        double wc_zahl = mapShortestSol.getLongestMovedDistance();
+        if(wc_zahl >= 3.352){
+            listOffBestSolutions.put(counter, wc_zahl);
+        }
+
+
+        initialRobots.getAllRobots().stream().forEach(r -> {
+            Text roboPosition = new Text("" + Math.round((r.position.asAngel()*(-1000)) / 1000));
+
+            roboPosition.setTextAlignment(TextAlignment.LEFT);
+            roboPosition.setX(300 + (r.position.x * 250) + 10);
+            roboPosition.setY(300 + (r.position.y*250)+10);
+            roboPosition.setStyle("-fx-font-size: 20px; -fx-fill: black;");
+            pane.getChildren().add(roboPosition);
+        });
+
+
+        Text zahlText = new Text("WC Laenge: " + String.valueOf(wc_zahl));
+
+        zahlText.setTextAlignment(TextAlignment.LEFT);
+        zahlText.setX(pane.getWidth() - 590);
+        zahlText.setY(pane.getHeight() - 10);
+        zahlText.setStyle("-fx-font-size: 20px; -fx-fill: black;");
+
+        // Füge den Text der Pane hinzu
+        pane.getChildren().add(zahlText);
+
+        pane.getChildren().add(circle);
+
+        stage.setResizable(false);
+        stage.setTitle("Freeze Tag Problem");
+        //stage.setScene(new Scene(root, paneWidth, paneHeight));
+        saveStageAsImage(stage);
     }
 
     private static void copyRobotsInList(RobotMap initialRobots, List<Robot> robots) {

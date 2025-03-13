@@ -47,6 +47,10 @@ public class RobotMap {
         return running.values();
     }
 
+    public void setRunningRobots(Map<String, Robot> robots) {
+        running = robots;
+    }
+
     public Collection<Robot> getSleepingRobots() {
         return sleeping.values();
     }
@@ -71,7 +75,7 @@ public class RobotMap {
         running.put(target.id, target);
     }
 
-    public double getLongestMovedDistance(String prefix) {
+    public double getLongestMovedDistance() {
         double longtestDistance = 0.0;
         for (Robot robot : robots.values()) {
             // System.out.println(prefix+"  check longest move for robot: "+robot.id+" distance: "+robot.distanceMoved);
@@ -105,4 +109,12 @@ public class RobotMap {
         return cloneMap;
     }
 
+
+    public Map<String, Robot> listToMap(Collection<Robot> runningList) {
+        Map<String, Robot> robots = new HashMap<>();
+        for (Robot robot : runningList) {
+            robots.put(robot.id, robot);
+        }
+        return robots;
+    }
 }

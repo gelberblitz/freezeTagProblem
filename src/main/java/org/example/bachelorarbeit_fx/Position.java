@@ -41,4 +41,14 @@ public class Position {
         double angle = Math.toDegrees(Math.atan2(y, x));
         return angle;
     }
+
+    public void fromAngleToPosition(double angle) {
+        // deg to rad
+        this.x = Math.cos(angle*Math.PI/180.0);
+        this.y = Math.sin(angle*Math.PI/180.0);
+
+        // auf 0 runden ...
+        if (Math.abs(this.x)<0.0001) this.x = 0;
+        if (Math.abs(this.y)<0.0001) this.y = 0;
+    }
 }
