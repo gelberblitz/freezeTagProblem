@@ -70,7 +70,6 @@ public class Solve {
         System.out.println("Total moves analyzed: "+statisticTotalMovesAnalyzed+" in "+(System.currentTimeMillis()-startTime)+" ms");
 
 
-
         // suche den wortscase
         // speichert die beste Lösung für eine Instant
         RobotMap currentShortestSolution = mapShortestSol;
@@ -88,7 +87,6 @@ public class Solve {
         System.out.println("Winkel sollte 154 oder 155 sein" + robot.position.asAngel());
 
         showResult("Solution", worstCase);
-
 
 
         System.out.println("Liste der WINKEL:");
@@ -437,6 +435,9 @@ public class Solve {
 
         }
 
+
+
+
         List<Robot> rekMapAngels = rekMap.getAllRobots().stream().toList();
         rekMapAngels.forEach(rekMapAngel -> {angleFromWorstCase.add(rekMapAngel.position.asAngel());});
 
@@ -545,7 +546,7 @@ public class Solve {
         RobotMap bestSolution = null;
 
         // make move for each running robot
-        Collection<Robot> inactiveRobots = new ArrayList<>();
+        //Collection<Robot> inactiveRobots = new ArrayList<>();
         for (Robot robot : map.getRunningRobots()) {
             // test every possible next target
             int counter = 0;
@@ -573,14 +574,6 @@ public class Solve {
                     shortestSolution = Math.round(shortestSolution * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
 
                     if (newLongestWay < shortestSolution) {
-                       // inaktive Roboter aus der Liste streichen
-                        if(!inactiveRobots.isEmpty()){
-                            Collection<Robot> colOfRobots = scenario.getRunningRobots();
-                            colOfRobots.removeAll(inactiveRobots);
-                            System.out.println("Neue aktive Listengröße: " + colOfRobots.size());
-                            scenario.setRunningRobots(scenario.listToMap(colOfRobots));
-                        }
-
                         Log.log(prefix + "Test scenario: "+currentLongestWay+" -> "+newLongestWay+" Robot " + robot.id + " moves to " + target.id);
                         //counter++;
                         solution = solve(nextLevel, scenario, newLongestWay);
@@ -608,10 +601,12 @@ public class Solve {
                 }
             }
 
-            // inaktivieren, wenn er keine kürzeren Wege findet
+            /*// inaktivieren, wenn er keine kürzeren Wege findet
             if(counter==0) {
                 inactiveRobots.add(robot);
             }
+
+             */
 
         }
 
