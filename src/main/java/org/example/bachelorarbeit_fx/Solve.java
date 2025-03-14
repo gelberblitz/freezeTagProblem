@@ -69,6 +69,8 @@ public class Solve {
 
         System.out.println("Total moves analyzed: "+statisticTotalMovesAnalyzed+" in "+(System.currentTimeMillis()-startTime)+" ms");
 
+
+
         // suche den wortscase
         // speichert die beste Lösung für eine Instant
         RobotMap currentShortestSolution = mapShortestSol;
@@ -177,8 +179,6 @@ public class Solve {
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
                     solvedMap = solve(0, rekMap, 0);
-                    prevPrevSolution = previousShortestSolution.clone();
-                    previousShortestSolution = solvedMap.clone();
                 }
             }
 
@@ -248,23 +248,23 @@ public class Solve {
                     ? solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
                     : solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
 
-            Robot maxDisPrev1;
-            if (!previousShortestSolution.getAllRobots().isEmpty()) {
-                maxDisPrev1 = (previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
-                        ? previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
-                        : previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
+            Robot maxDisPrevPrev1;
+            if (!prevPrevSolution.getAllRobots().isEmpty()) {
+                maxDisPrevPrev1 = (prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
+                        ? prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
+                        : prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
             }else{
-                maxDisPrev1 = new Robot("9999", false, 0);
+                maxDisPrevPrev1 = new Robot("9999", false, 0);
             }
 
             // runde um fehler zu vermeiden
-            boolean loop1 = isLoop(maxDisSolved1, DECIMAL_PLACES2, maxDisPrev1);
+            boolean loop1 = isLoop(maxDisSolved1, DECIMAL_PLACES2, maxDisPrevPrev1);
 
             double solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
             double currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
             if(solvedMapSolutionLength >= currShortestSolution && !loop1) {
                 // probiere nochmal
-                //prevPrevSolution = previousShortestSolution.clone();
+                prevPrevSolution = previousShortestSolution.clone();
                 previousShortestSolution = solvedMap.clone();
                 solvedMap = searchWortsCaseSzenario(solvedMap, previousShortestSolution, rekMap, prevPrevSolution);
 
@@ -280,22 +280,22 @@ public class Solve {
 
                 solvedMap = solve(0, rekMap, 0);
                 // todo prüfen, ob der roboter aus der prevprevSolution an der gleichen position mit der gleichen aufweckzeit wie solvedMap ist
-                // -> jz probieren
-                Robot maxDisSolved = (solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
-                        ? solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
-                        : solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
+                // -> jz probieren // eigentlich will man hier den gerade geänderten haben?
+                //Robot newMaxDisSolved = rMaxDistance.clone();
+                //newMaxDisSolved.position.fromAngleToPosition((rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id)).position.asAngel()-2));
+                Robot maxDisSolved = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id));
 
-                Robot maxDisPrev;
-                if (!previousShortestSolution.getAllRobots().isEmpty()) {
-                    maxDisPrev = (previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
-                            ? previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
-                            : previousShortestSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
+                Robot maxDisPrevPrev;
+                if (!prevPrevSolution.getAllRobots().isEmpty()) {
+                    maxDisPrevPrev = (prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
+                            ? prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
+                            : prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
                 }else{
-                    maxDisPrev = new Robot("9999", false, 0);
+                    maxDisPrevPrev = new Robot("9999", false, 0);
                 }
 
 
-                boolean loop = isLoop(maxDisSolved, DECIMAL_PLACES2, maxDisPrev);
+                boolean loop = isLoop(maxDisSolved, DECIMAL_PLACES2, maxDisPrevPrev);
 
                 solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
                 double prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
@@ -348,7 +348,7 @@ public class Solve {
             double prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
             if(solvedMapSolutionLength >= prevShortestSolution){
                 // probiere nochmal
-                //prevPrevSolution = previousShortestSolution.clone();
+                prevPrevSolution = previousShortestSolution.clone();
                 previousShortestSolution = solvedMap.clone();
                 solvedMap = searchWortsCaseSzenario(solvedMap, previousShortestSolution, rekMap, prevPrevSolution);
 
@@ -366,7 +366,7 @@ public class Solve {
                 prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
                 if(solvedMapSolutionLength >= prevShortestSolution){
                     // probiere nochmal
-                    //prevPrevSolution = previousShortestSolution.clone();
+                    prevPrevSolution = previousShortestSolution.clone();
                     previousShortestSolution = solvedMap.clone();
                     solvedMap = searchWortsCaseSzenario(solvedMap, previousShortestSolution, rekMap, prevPrevSolution);
                 }else{
@@ -375,14 +375,21 @@ public class Solve {
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
                     solvedMap = solve(0, rekMap, 0);
-                    previousShortestSolution = solvedMap.clone();
+                    //previousShortestSolution = solvedMap.clone();
                 }
             }
 
             // wenn nicht schlechter, probiere 3. Verschiebung so oft wie es schlechter wird (beide richtungen prüfen)
             List<String> historyOfThird = list2.get(Integer.parseInt(indexOfRobot)).history;
-            String indexOfThirdRobot = historyOfThird
-                    .get(list2.get(Integer.parseInt(indexOfRobot)).history.size() - 3).substring(14, 15);
+            int indexOThird = ((list2.get(Integer.parseInt(indexOfRobot)).history.size() - 3) > 0) ? (list2.get(Integer.parseInt(indexOfRobot)).history.size() - 3) : 0;
+            String historyOfThirdRob = historyOfThird
+                    .get(indexOThird);
+
+            String indexOfThirdRobot = "";
+            if(historyOfThirdRob.contains("Awaked")){
+                indexOfThirdRobot = historyOfThirdRob.substring(16, 17);
+            }else{indexOfThirdRobot = historyOfThirdRob.substring(14, 15);}
+
 
             // todo änder den winkel von indexofThirdRobot +1 ind -1 bis es schlechter wird
             newLongestRobot = rekMap.getAllRobots()
@@ -425,7 +432,6 @@ public class Solve {
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
                     solvedMap = solve(0, rekMap, 0);
-                    previousShortestSolution = solvedMap.clone();
                 }
             }
 
@@ -459,16 +465,20 @@ public class Solve {
         maxDisSolved.position.x = Math.round(maxDisSolved.position.x * Math.pow(10, DECIMAL_PLACES2)) / Math.pow(10, DECIMAL_PLACES2);
         maxDisSolved.position.y = Math.round(maxDisSolved.position.y * Math.pow(10, DECIMAL_PLACES2)) / Math.pow(10, DECIMAL_PLACES2);
 
+        double angleMaxDisSolved = Math.round(maxDisSolved.position.asAngel() * Math.pow(10, 0)) / Math.pow(10, 0);
+
+
         maxDisPrevPrev.position.x = Math.round(maxDisPrevPrev.position.x * Math.pow(10, DECIMAL_PLACES2)) / Math.pow(10, DECIMAL_PLACES2);
         maxDisPrevPrev.position.y = Math.round(maxDisPrevPrev.position.y * Math.pow(10, DECIMAL_PLACES2)) / Math.pow(10, DECIMAL_PLACES2);
+
+        double angleMaxDisPrev = Math.round(maxDisPrevPrev.position.asAngel() * Math.pow(10, 0)) / Math.pow(10, 0);
 
 
         boolean loop = false;
         if(maxDisSolved.id.equals(maxDisPrevPrev.id)) {
-            if(maxDisSolved.position.x == maxDisPrevPrev.position.x && maxDisSolved.position.y == maxDisPrevPrev.position.y) {
-                if(maxDisSolved.distanceMoved == maxDisPrevPrev.distanceMoved) {
-                    loop = true;
-                }
+            if(angleMaxDisSolved == angleMaxDisPrev) {
+            //if(maxDisSolved.position.x == maxDisPrevPrev.position.x && maxDisSolved.position.y == maxDisPrevPrev.position.y) {
+                loop = true;
             }
         }
         return loop;
