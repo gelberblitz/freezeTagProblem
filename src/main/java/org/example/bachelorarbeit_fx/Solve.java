@@ -96,6 +96,11 @@ public class Solve {
                                               RobotMap initRobots, RobotMap prevPrevSolution,
                                               String prevMoved,
                                               double preAngle) {
+        if(longestDistanceFound){
+            return worstCaseInstance;
+        }else {
+
+
             preAngle = Math.round(preAngle);
 
             // fürs runden auf die nachkommastellen
@@ -309,9 +314,9 @@ public class Solve {
                     // -> es gibt keine schlechtere Instanz
                     resetRekMap(rekMap, rootRoboter.id);
                 }
-                if(worstCaseInstance.getLongestMovedDistance() < currentShortestSolution.getLongestMovedDistance()){
+                if (worstCaseInstance.getLongestMovedDistance() < currentShortestSolution.getLongestMovedDistance()) {
                     worstCaseInstance = currentShortestSolution.clone();
-                }else{
+                } else {
                     longestDistanceFound = true;
                 }
 
@@ -558,6 +563,7 @@ public class Solve {
                 }
             }
             return currentShortestSolution;
+        }
     }
 
     private static boolean isGV(RobotMap currentShortestSolution, RobotMap initRobots) {
