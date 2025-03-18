@@ -95,8 +95,7 @@ public class Main extends Application {
                 solve.setForImage(stage, initialRobots, circle, pane);
                 solve.run();
 
-                // wert dynamisch
-                if(solve.mapShortestSol.getLongestMovedDistance() >= 3.352){
+                if(solve.mapShortestSol.getLongestMovedDistance() >= 3.3511){
                     buildScene(stage, solve, initialRobots, circle);
                 }
                 stage.show();
@@ -148,7 +147,7 @@ public class Main extends Application {
             pane.getChildren().add(line);
         }
 
-        double wc_zahl = solve.bestSol;
+        double wc_zahl = solve.mapShortestSol.getLongestMovedDistance();
         if(wc_zahl >= 3.352){
             listOffBestSolutions.put(counter, wc_zahl);
         }

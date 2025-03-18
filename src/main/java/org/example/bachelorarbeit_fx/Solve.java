@@ -15,11 +15,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Solve {
 
@@ -34,7 +29,8 @@ public class Solve {
     double bestSol = 0.0;
     double bestSol2 = 0.0;
     RobotMap wc = new RobotMap();
-
+    RobotMap worstCaseInstance = new RobotMap();
+    boolean longestDistanceFound = false;
     List<Line> listeLines = new ArrayList<>();
 
 
@@ -69,11 +65,10 @@ public class Solve {
 
         System.out.println("Total moves analyzed: "+statisticTotalMovesAnalyzed+" in "+(System.currentTimeMillis()-startTime)+" ms");
 
-
         // suche den wortscase
         // speichert die beste Lösung für eine Instant
         RobotMap currentShortestSolution = mapShortestSol;
-        RobotMap worstCase = searchWortsCaseSzenario(currentShortestSolution, new RobotMap(), initialRobotsAll, new RobotMap());
+        RobotMap worstCase = searchWortsCaseSzenario2(currentShortestSolution, new RobotMap(), initialRobotsAll, new RobotMap(), "999", -1);
 
         System.out.println("Längster Weg:" + worstCase.getLongestMovedDistance());
         Collection<Robot> rall = worstCase.getAllRobots();
@@ -85,13 +80,536 @@ public class Solve {
             }
         }
         System.out.println("Winkel sollte 154 oder 155 sein" + robot.position.asAngel());
-
         showResult("Solution", worstCase);
+
+        System.out.println("WC INSTANCE LÄNGE: " + worstCaseInstance.getLongestMovedDistance());
+
+
 
 
         System.out.println("Liste der WINKEL:");
         angleFromWorstCase.forEach(System.out::println);
     }
+
+
+    private RobotMap searchWortsCaseSzenario2(RobotMap currentShortestSolution, RobotMap previousShortestSolution,
+                                              RobotMap initRobots, RobotMap prevPrevSolution,
+                                              String prevMoved,
+                                              double preAngle) {
+            preAngle = Math.round(preAngle);
+
+            // fürs runden auf die nachkommastellen
+            int DECIMAL_PLACES = 8;
+
+            //Map um die Winkel zu ändern
+            RobotMap rekMap = new RobotMap();
+
+            //Map um die aktuelle Lösung zu prüfen
+            RobotMap solvedMap = new RobotMap();
+
+            // für test, ob es schon welche gibt
+            List<Double> currAngles = new ArrayList<>();
+
+            //speicher die winkel der aktuellen lösung in aHist
+            List<Double> aHist = new ArrayList<>();
+            safeAngles(currentShortestSolution, initRobots, aHist);
+
+            angleHistory.add(aHist);
+
+            // speicher die aktuelle Lösung
+            previousShortestSolution = currentShortestSolution;
+
+            // alle Roboter aus aktueller Lösung, abwärts sorted
+            List<Robot> allRobotsAsListSortedBackwards = currentShortestSolution.getAllRobots().stream()
+                    .sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed())
+                    .toList();
+
+
+            // zähle, ob 4 Roboter die gleiche Länge haben, wenn ja, dann GV bzw symmetrisch
+            int counterForGv = 0;
+            for (Robot r : allRobotsAsListSortedBackwards) {
+                if (r.distanceMoved == currentShortestSolution.getLongestMovedDistance()) {
+                    counterForGv++;
+                }
+            }
+
+            // GV/Symm ?
+            boolean isGV = isGV(currentShortestSolution, initRobots);
+
+            // wenn nicht gleichverteilt && s
+            if (counterForGv == 4 && !isGV) {
+                Robot maxDistanceRobot = new Robot("999", false, 0.0);
+                for (Robot r : allRobotsAsListSortedBackwards) {
+                    // sichergehen, dass es nicht einer von den anfänglichen robots ist, der den längsten geweckt hat
+                    if (r.distanceMoved == currentShortestSolution.getLongestMovedDistance() && r.history.size() == 1 && !r.id.equals(prevMoved)) {
+                        maxDistanceRobot = r;
+                        break;
+                    }
+                }
+                //verschiebe den längsten roboter
+                int counter = 0;
+
+                if (initRobots.getAllRobots().size() + 1 == currentShortestSolution.getAllRobots().size()) {
+                    rekMap.createInitialRobot();
+                    counter = 1;
+                }
+
+                for (Robot r : initRobots.getAllRobots()) {
+                    r.id = String.valueOf(counter);
+                    counter++;
+                    if (r.id.equals(maxDistanceRobot.id)) {
+                        // nur zum anschauen
+                        double soutt = r.position.asAngel();
+                        soutt++;
+                        rekMap.createRobot(r.position.asAngel() + 1.0);
+                    } else {
+                        if (r.id.equals("0")) {
+                            rekMap.createRobot(0.0, 0.0);
+                        } else {
+                            rekMap.createRobot(r.position.asAngel());
+                        }
+                    }
+                }
+
+                // probiere verschiebung aus
+                solvedMap = solve(0, rekMap, 0);
+
+                double solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                double currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                if (solvedMapSolutionLength > currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(maxDistanceRobot.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, maxDistanceRobot.id, maxDistanceRobot.position.asAngel());
+                } else {
+                    // +1 geht nicht, geht -1?
+                    for (Robot r2 : rekMap.getAllRobots()) {
+                        if (r2.id.equals(maxDistanceRobot.id)) {
+                            double soutt = r2.position.asAngel();
+                            soutt -= 2;
+                            r2.position.fromAngleToPosition(r2.position.asAngel() - 2);
+                        }
+                    }
+                    currAngles.clear();
+
+                    // probiere verschiebung aus
+                    solvedMap = solve(0, rekMap, 0);
+
+                    checkLastMovement(currentShortestSolution, previousShortestSolution, solvedMap, DECIMAL_PLACES, rekMap, maxDistanceRobot, prevMoved, preAngle);
+                    // -> es gibt keine schlechtere Instanz
+                    resetRekMap(rekMap, maxDistanceRobot.id);
+                }
+
+                // hole aufwachkette
+                // id von dem aufweckenden
+                String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
+
+                String secondBadestRoboter = "";
+                for (Robot r : allRobotsAsListSortedBackwards) {
+                    if (r.id.equals(idAufweckenderRoboter)) {
+                        secondBadestRoboter = r.history.get(r.history.size() - 2).substring(14, 15);
+                    }
+                }
+
+                Robot secondBadestRobot = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRoboter));
+                secondBadestRobot.position.fromAngleToPosition(secondBadestRobot.position.asAngel() + 1);
+
+                // probiere verschiebung aus
+                solvedMap = solve(0, rekMap, 0);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                if (solvedMapSolutionLength > currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRobot.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    // angel -1 weil hier der geänderte winkel gesafed wird
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, secondBadestRobot.id, secondBadestRobot.position.asAngel() - 1);
+                } else {
+                    // +1 geht nicht, geht -1?
+                    for (Robot r2 : rekMap.getAllRobots()) {
+                        if (r2.id.equals(secondBadestRobot.id)) {
+                            double soutt = r2.position.asAngel();
+                            soutt -= 2;
+                            r2.position.fromAngleToPosition(r2.position.asAngel() - 2);
+                        }
+                    }
+
+                    currAngles.clear();
+
+                    // probiere verschiebung aus
+                    solvedMap = solve(0, rekMap, 0);
+
+                    checkLastMovement(currentShortestSolution, previousShortestSolution, solvedMap, DECIMAL_PLACES, rekMap, secondBadestRobot, prevMoved, preAngle);
+                    // -> es gibt keine schlechtere Instanz
+                    resetRekMap(rekMap, secondBadestRobot.id);
+                }
+
+                // hole root roboter
+                String rootRobot = "";
+                for (Robot r : allRobotsAsListSortedBackwards) {
+                    if (r.id.equals(idAufweckenderRoboter)) {
+                        if (r.history.get(0).contains("Awaked by robot 0") || r.history.get(0).contains("Initial")) {
+                            rootRobot = r.id;
+                        }
+                    }
+                }
+                Robot rootRoboter = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRobot));
+                rootRoboter.position.fromAngleToPosition(rootRoboter.position.asAngel() + 1);
+
+                // probiere verschiebung aus
+                solvedMap = solve(0, rekMap, 0);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                if (solvedMapSolutionLength > currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRoboter.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    // angel -1 weil hier der geänderte winkel gesafed wird
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, rootRoboter.id, rootRoboter.position.asAngel() - 1);
+                } else {
+                    // +1 geht nicht, geht -1?
+                    for (Robot r2 : rekMap.getAllRobots()) {
+                        if (r2.id.equals(rootRoboter.id)) {
+                            double soutt = r2.position.asAngel();
+                            soutt -= 2;
+                            r2.position.fromAngleToPosition(r2.position.asAngel() - 2);
+                        }
+                    }
+
+                    currAngles.clear();
+
+                    // probiere verschiebung aus
+                    solvedMap = solve(0, rekMap, 0);
+
+                    checkLastMovement(currentShortestSolution, previousShortestSolution, solvedMap, DECIMAL_PLACES, rekMap, rootRoboter, prevMoved, preAngle);
+                    // -> es gibt keine schlechtere Instanz
+                    resetRekMap(rekMap, rootRoboter.id);
+                }
+                if(worstCaseInstance.getLongestMovedDistance() < currentShortestSolution.getLongestMovedDistance()){
+                    worstCaseInstance = currentShortestSolution.clone();
+                }else{
+                    longestDistanceFound = true;
+                }
+
+                // nicht GV und nicht symmetrisch
+            } else {
+                Robot maxDistanceRobot = new Robot("999", true, 0);
+
+                //suche längsten Roboter
+                for (Robot r : allRobotsAsListSortedBackwards) {
+                    // sichergehen, dass es nicht einer von den anfänglichen robots ist, der den längsten geweckt hat
+                    if (r.distanceMoved == currentShortestSolution.getLongestMovedDistance() && r.history.size() == 1) {
+                        maxDistanceRobot = r;
+                        break;
+                    }
+                }
+
+                //verschiebe den längsten roboter
+                int counter = 0;
+
+                if (initRobots.getAllRobots().size() + 1 == currentShortestSolution.getAllRobots().size()) {
+                    rekMap.createInitialRobot();
+                    counter = 1;
+                }
+
+                for (Robot r : initRobots.getAllRobots()) {
+                    r.id = String.valueOf(counter);
+                    counter++;
+                    if (r.id.equals(maxDistanceRobot.id)) {
+                        // nur zum anschauen
+                        double soutt = r.position.asAngel();
+                        soutt++;
+                        rekMap.createRobot(r.position.asAngel() + 1.0);
+                    } else {
+                        if (r.id.equals("0")) {
+                            rekMap.createRobot(0.0, 0.0);
+                        } else {
+                            rekMap.createRobot(r.position.asAngel());
+                        }
+                    }
+                }
+
+                // berechnen
+                solvedMap = solve(0, rekMap, 0);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                // dist vergleichen
+                double solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                double currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                if (solvedMapSolutionLength >= currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(maxDistanceRobot.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, maxDistanceRobot.id, maxDistanceRobot.position.asAngel());
+
+                } else {
+                    currAngles.clear();
+
+                    //previousShortestSolution = solvedMap.clone();
+                    for (Robot r : rekMap.getAllRobots()) {
+                        if (r.id.equals(maxDistanceRobot.id)) {
+                            double soutt = r.position.asAngel();
+                            soutt -= 2;
+                            r.position.fromAngleToPosition(r.position.asAngel() - 2);
+                        }
+                    }
+
+                    solvedMap = solve(0, rekMap, 0);
+
+                    // speicher die aktuellen positionen als winkel
+                    for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                        currAngles.add((double) Math.round(robot.position.asAngel()));
+                    }
+
+                    solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    double prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    if (solvedMapSolutionLength >= prevShortestSolution
+                            && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(maxDistanceRobot.id)).position.asAngel()) != preAngle
+                            && !containsList(angleHistory, currAngles)) {
+                        // probiere nochmal
+                        prevPrevSolution = previousShortestSolution.clone();
+                        previousShortestSolution = solvedMap.clone();
+                        solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, maxDistanceRobot.id, maxDistanceRobot.position.asAngel());
+                    } else {
+                        // setze den wert wieder zurück
+                        currAngles.clear();
+                        resetRekMap(rekMap, maxDistanceRobot.id);
+                    }
+                }
+
+                // bis hier ging alles
+
+                // suche den nächstkleineren Roboter, der rMaxDistance aufgeweckt hat aus der Liste list
+                String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
+
+                String secondBadestRoboter = "";
+                for (Robot r : allRobotsAsListSortedBackwards) {
+                    if (r.id.equals(idAufweckenderRoboter)) {
+                        secondBadestRoboter = r.history.get(r.history.size() - 2).substring(14, 15);
+                    }
+                }
+
+                Robot secondBadestRobot = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRoboter));
+                secondBadestRobot.position.fromAngleToPosition(secondBadestRobot.position.asAngel() + 1);
+
+                // probiere verschiebung aus
+                solvedMap = solve(0, rekMap, 0);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                if (solvedMapSolutionLength >= currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRobot.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    // angel -1 weil hier der geänderte winkel gesafed wird
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, secondBadestRobot.id, secondBadestRobot.position.asAngel() - 1);
+                } else {
+                    currAngles.clear();
+
+                    // +1 geht nicht, geht -1?
+                    for (Robot r2 : rekMap.getAllRobots()) {
+                        if (r2.id.equals(secondBadestRobot.id)) {
+                            double soutt = r2.position.asAngel();
+                            soutt -= 2;
+                            r2.position.fromAngleToPosition(r2.position.asAngel() - 2);
+                        }
+                    }
+
+                    // probiere verschiebung aus
+                    solvedMap = solve(0, rekMap, 0);
+
+                    // speicher die aktuellen positionen als winkel
+                    for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                        currAngles.add((double) Math.round(robot.position.asAngel()));
+                    }
+
+                    // todo: richtiges vorgehene
+                    solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    double prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    if (solvedMapSolutionLength >= prevShortestSolution
+                            && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRobot.id)).position.asAngel()) != preAngle) {
+                        // probiere nochmal
+                        prevPrevSolution = previousShortestSolution.clone();
+                        previousShortestSolution = solvedMap.clone();
+                        // angel +2 weil hier der geänderte winkel gesafed wird
+                        solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, secondBadestRobot.id, secondBadestRobot.position.asAngel() + 1);
+                    } else {
+                        currAngles.clear();
+                        // setze den wert wieder zurück
+                        resetRekMap(rekMap, secondBadestRobot.id);
+                    }
+
+                    // -> es gibt keine schlechtere Instanz
+                    //resetRekMap(rekMap, secondBadestRobot.id);
+                }
+
+                // hole root roboter
+                String rootRobot = "";
+                if (idAufweckenderRoboter.equals("0")) {
+                    for (Robot r : allRobotsAsListSortedBackwards) {
+                        if (r.id.equals(idAufweckenderRoboter)) {
+                            rootRobot = r.history.get(1).substring(14, 15);
+                        }
+                    }
+                } else {
+                    for (Robot r : allRobotsAsListSortedBackwards) {
+                        if (r.id.equals(idAufweckenderRoboter)) {
+                            if (r.history.get(0).contains("Awaked by robot 0") || r.history.get(0).contains("Initial")) {
+                                rootRobot = r.id;
+                            }
+                        }
+                    }
+                }
+                Robot rootRoboter = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRobot));
+                rootRoboter.position.fromAngleToPosition(rootRoboter.position.asAngel() + 1);
+
+                // probiere verschiebung aus
+                solvedMap = solve(0, rekMap, 0);
+
+                // speicher die aktuellen positionen als winkel
+                for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                    currAngles.add((double) Math.round(robot.position.asAngel()));
+                }
+
+                solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                if (solvedMapSolutionLength >= currShortestSolution
+                        && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRoboter.id)).position.asAngel()) != preAngle
+                        && !containsList(angleHistory, currAngles)) {
+                    // probiere nochmal
+                    prevPrevSolution = previousShortestSolution.clone();
+                    previousShortestSolution = solvedMap.clone();
+                    // angel -1 weil hier der geänderte winkel gesafed wird
+                    solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, rootRoboter.id, rootRoboter.position.asAngel() - 1);
+                } else {
+                    currAngles.clear();
+                    // +1 geht nicht, geht -1?
+                    for (Robot r2 : rekMap.getAllRobots()) {
+                        if (r2.id.equals(rootRoboter.id)) {
+                            double soutt = r2.position.asAngel();
+                            soutt -= 2;
+                            r2.position.fromAngleToPosition(r2.position.asAngel() - 2);
+                        }
+                    }
+
+                    // probiere verschiebung aus
+                    solvedMap = solve(0, rekMap, 0);
+
+                    // speicher die aktuellen positionen als winkel
+                    for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+                        currAngles.add((double) Math.round(robot.position.asAngel()));
+                    }
+
+                    solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    double prevShortestSolution = Math.round(previousShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    if (solvedMapSolutionLength >= prevShortestSolution
+                            && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRoboter.id)).position.asAngel()) != preAngle
+                            && !containsList(angleHistory, currAngles)) {
+                        // probiere nochmal
+                        prevPrevSolution = previousShortestSolution.clone();
+                        previousShortestSolution = solvedMap.clone();
+                        // angel +2 weil hier der geänderte winkel gesafed wird
+                        solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, rootRoboter.id, rootRoboter.position.asAngel());
+                    } else {
+                        currAngles.clear();
+                        // setze den wert wieder zurück
+                        resetRekMap(rekMap, rootRoboter.id);
+                    }
+
+                    // -> es gibt keine schlechtere Instanz
+                    //resetRekMap(rekMap, rootRoboter.id);
+                }
+            }
+            return currentShortestSolution;
+    }
+
+    private static boolean isGV(RobotMap currentShortestSolution, RobotMap initRobots) {
+        int symCounter = 0;
+        Robot x;
+        Robot y;
+        boolean isSymmetric = false;
+        double diff = Math.abs((360 / (currentShortestSolution.getAllRobots().size()-1)));
+        for(int i = 0; i < initRobots.getAllRobots().size()-1; i++){
+            x = initRobots.getAllRobots().stream().toList().get(i);
+            int xAsAngle = (int) Math.round(x.position.asAngel());
+            y = initRobots.getAllRobots().stream().toList().get(i+1);
+            int yAsAngle = (int) Math.round(y.position.asAngel());
+            if(xAsAngle < 0 && yAsAngle > 0 || xAsAngle > 0 && yAsAngle < 0){
+                int abs1 = Math.abs(180 - Math.abs(xAsAngle));
+                int abs2 = Math.abs(180 - Math.abs(yAsAngle));
+                if(abs1+abs2 == diff) symCounter++;
+
+            } else if(Math.abs(xAsAngle-yAsAngle) == diff){
+                symCounter++;
+            }
+        }
+        if(symCounter == initRobots.getAllRobots().size()-1){
+            isSymmetric = true;
+        }
+        return isSymmetric;
+    }
+
+    private void checkLastMovement(RobotMap currentShortestSolution, RobotMap previousShortestSolution, RobotMap solvedMap, int DECIMAL_PLACES, RobotMap rekMap, Robot maxDistanceRobot,String preMoved, double preAngle) {
+        RobotMap prevPrevSolution;
+        double solvedMapSolutionLength;
+        double currShortestSolution;
+        List<Double> currAngles = new ArrayList<>();
+
+        solvedMapSolutionLength = Math.round(solvedMap.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+        currShortestSolution = Math.round(currentShortestSolution.getLongestMovedDistance() * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+
+        // speicher die aktuellen positionen als winkel
+        for (Robot robot : rekMap.getAllRobots().stream().toList()) {
+            currAngles.add((double) Math.round(robot.position.asAngel()));
+        }
+
+        if (solvedMapSolutionLength > currShortestSolution
+                && Math.round(rekMap.getAllRobots().stream().toList().get(Integer.parseInt(maxDistanceRobot.id)).position.asAngel()) != Math.round(preAngle)
+                && !containsList(angleHistory, currAngles)) {
+            // probiere nochmal
+            prevPrevSolution = previousShortestSolution.clone();
+            previousShortestSolution = solvedMap.clone();
+            solvedMap = searchWortsCaseSzenario2(solvedMap, previousShortestSolution, rekMap, prevPrevSolution, maxDistanceRobot.id, maxDistanceRobot.position.asAngel());
+        }
+    }
+
 
     private RobotMap searchWortsCaseSzenario(RobotMap currentShortestSolution, RobotMap previousShortestSolution, RobotMap initRobots, RobotMap prevPrevSolution) {
         int DECIMAL_PLACES = 5;
@@ -181,8 +699,11 @@ public class Solve {
             }
 
         }
+
+
         angleHistory.add(aHist);
 
+        //angleHistory.add(aHist);
 
 
         // suche längsten Weg & Roboter
@@ -201,12 +722,33 @@ public class Solve {
                 rMaxDistance = list.get(1);
             }
         }
-        //rMaxDistance = (list.get(0).id.equals("0")) ? list.get(1) : list.get(0);
 
         if(rMaxDistance != null) {
             // probiere 1. Verschiebung so oft wie es schlechter wird (beide richtungen prüfen)
             //hole Position als Winkel und inkrementiere, bzw reduziere
             //löse die verschiebung
+
+            // zählt ob eine gleichverteilung vorhanden ist
+            int testCounter = 0;
+            for(Robot r : list){
+                if(r.distanceMoved == rMaxDistance.distanceMoved){
+                    testCounter++;
+                }
+            }
+
+            // gleichverteilung?
+            if(testCounter == 4){
+                for(Robot r : list){
+                    if(r.distanceMoved == rMaxDistance.distanceMoved){
+                        // überschreibt den 1. gefundenen, bspw überschreibt r4, r3
+                        if(r.history.size() == 1){
+                            rMaxDistance = r;
+                        }
+                    }
+                }
+            }
+
+
 
             int counter = 0;
 
@@ -240,8 +782,13 @@ public class Solve {
             rekMap.getAllRobots().forEach(robot -> {
                 l.add(robot.position.asAngel());
             });
+
             solvedMap = solve(0, rekMap, 0);
 
+            /*
+
+             Robot maxDisSolved1 = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id));
+             */
             Robot maxDisSolved1 = (solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
                     ? solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
                     : solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
@@ -281,8 +828,15 @@ public class Solve {
                 // -> jz probieren // eigentlich will man hier den gerade geänderten haben?
                 //Robot newMaxDisSolved = rMaxDistance.clone();
                 //newMaxDisSolved.position.fromAngleToPosition((rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id)).position.asAngel()-2));
-                Robot maxDisSolved = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id));
 
+
+                Robot maxDisSolved = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rMaxDistance.id));
+                /*
+                Robot maxDisSolved = (solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
+
+                        ? solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(1)
+                        : solvedMap.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0);
+                */
                 Robot maxDisPrevPrev;
                 if (!prevPrevSolution.getAllRobots().isEmpty()) {
                     maxDisPrevPrev = (prevPrevSolution.getAllRobots().stream().sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed()).toList().get(0).id.equals("0"))
@@ -307,7 +861,7 @@ public class Solve {
                     resetRekMap(rekMap, rMaxDistance.id);
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
-                    solvedMap = solve(0, rekMap, 0);
+                    //solvedMap = solve(0, rekMap, 0);
                     //prevPrevSolution = previousShortestSolution.clone();
                     //previousShortestSolution = solvedMap.clone();
                 }
@@ -316,12 +870,12 @@ public class Solve {
 
             // wenn nicht besser, dann probiere 2. Verschiebung so oft wie es schlechter wird (beide richtungen prüfen)
             //TODO: suche den nächstkleineren Roboter, der rMaxDistance aufgeweckt hat aus der Liste list
-            List<Robot> list2 = solvedMap.getAllRobots().stream()
+            List<Robot> list2 = previousShortestSolution.getAllRobots().stream()
                     .sorted(Comparator.comparingDouble(Robot::getDistanceMoved).reversed())
                     .toList();
 
             Robot rMaxDistance2_2 = (list2.get(0).id.equals("0")) ? list2.get(1) : list2.get(0);
-            
+
             String indexOfRobot = rMaxDistance2_2.history.get(0).substring(16, 17);
             String indexOfSecondRobot = "";
             int cnter = 0;
@@ -372,7 +926,7 @@ public class Solve {
                     resetRekMap(rekMap, newLongestRobot.id);
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
-                    solvedMap = solve(0, rekMap, 0);
+                    //solvedMap = solve(0, rekMap, 0);
                     //previousShortestSolution = solvedMap.clone();
                 }
             }
@@ -429,7 +983,7 @@ public class Solve {
                     resetRekMap(rekMap, newLongestRobot.id);
 
                     // solvedMap ist wenn -2 augrund von +1 nicht geht, hier wieder auf dem urzustand
-                    solvedMap = solve(0, rekMap, 0);
+                    //solvedMap = solve(0, rekMap, 0);
                 }
             }
 
@@ -558,7 +1112,6 @@ public class Solve {
                 scenario.move(prefix, robot.id, target.id);
                 //hier vlt screens
                 //buildScene(stage, scenario, initialRobots, circle, x);
-                 x++;
 
                 double newLongestWay = scenario.getLongestMovedDistance();
 
@@ -571,7 +1124,7 @@ public class Solve {
                     // solve remaining
                     int DECIMAL_PLACES = 5;
                     newLongestWay = Math.round(newLongestWay * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
-                    shortestSolution = Math.round(shortestSolution * Math.pow(10, DECIMAL_PLACES)) / Math.pow(10, DECIMAL_PLACES);
+                    shortestSolution =  Math.round(shortestSolution * 100000.0) / 100000.0;
 
                     if (newLongestWay < shortestSolution) {
                         Log.log(prefix + "Test scenario: "+currentLongestWay+" -> "+newLongestWay+" Robot " + robot.id + " moves to " + target.id);
@@ -601,12 +1154,6 @@ public class Solve {
                 }
             }
 
-            /*// inaktivieren, wenn er keine kürzeren Wege findet
-            if(counter==0) {
-                inactiveRobots.add(robot);
-            }
-
-             */
 
         }
 
