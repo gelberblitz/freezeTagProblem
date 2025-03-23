@@ -65,6 +65,8 @@ public class Solve {
 
         System.out.println("Total moves analyzed: "+statisticTotalMovesAnalyzed+" in "+(System.currentTimeMillis()-startTime)+" ms");
 
+
+
         // suche den wortscase
         // speichert die beste Lösung für eine Instant
         RobotMap currentShortestSolution = mapShortestSol;
@@ -83,7 +85,6 @@ public class Solve {
         showResult("Solution", worstCase);
 
         System.out.println("WC INSTANCE LÄNGE: " + worstCaseInstance.getLongestMovedDistance());
-
 
 
 
@@ -333,6 +334,37 @@ public class Solve {
                     }
                 }
 
+                //todo identifiziere aufweckhistory
+                boolean found = false;
+                Robot x;
+                List<Integer> historyOfBadestPath = new ArrayList<>();
+                Robot currRob = maxDistanceRobot.clone();
+                historyOfBadestPath.add(Integer.valueOf(currRob.id));
+
+                while(!found){
+                    int idOfNext = Integer.parseInt(currRob.history.get(0).substring(16,17));
+
+                    x = findRobotById(currentShortestSolution, idOfNext);
+
+                    if(!x.history.get(1).substring(14,15)
+                            .equals(currRob.id)){
+                        for(int i = x.history.size()-2; i > 0; i--){
+                            historyOfBadestPath.add(Integer.valueOf(x.history.get(i).substring(14,15)));
+                        }
+                    }
+
+                    historyOfBadestPath.add(idOfNext);
+
+                    currRob = findRobotById(currentShortestSolution, idOfNext);
+
+
+                    if(String.valueOf(idOfNext).equals("0")){
+                        found = true;
+                    }
+                }
+
+
+
                 //verschiebe den längsten roboter
                 int counter = 0;
 
@@ -564,6 +596,17 @@ public class Solve {
             }
             return currentShortestSolution;
         }
+    }
+
+    private Robot findRobotById(RobotMap map, int idOfNext) {
+        List<Robot> l = map.getAllRobots().stream().toList();
+
+        for (Robot robot : l) {
+            if(robot.id.equals(String.valueOf(idOfNext))){
+                return robot;
+            }
+        }
+        return null;
     }
 
     private static boolean isGV(RobotMap currentShortestSolution, RobotMap initRobots) {

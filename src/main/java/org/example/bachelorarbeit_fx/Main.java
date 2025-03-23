@@ -70,7 +70,7 @@ public class Main extends Application {
         // startzeit
         long startZeit = System.currentTimeMillis();
 
-        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/basti/BA_FTP/instance/5_1.txt"))){
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("C:/Users/sfroehlich/Desktop/freezetag/instance/5_1.txt"))){
             sampleSize = Integer.parseInt(bufferedReader.readLine());
             numbRoboter = Integer.parseInt(bufferedReader.readLine());
 
@@ -283,7 +283,7 @@ public class Main extends Application {
         }
 
         // Speichern des Bildes in eine Datei
-        String desktopPath = System.getProperty("user.home") + "/Desktop/FTP Lösungen/5/" + size + "_" + counter + ".png";
+        String desktopPath = System.getProperty("user.home") + "\\Desktop\\FTP Lösungen\\5\\" + size + "_" + counter + ".png";
         File file = new File(desktopPath);
         try {
             ImageIO.write(bufferedImage, "PNG", file);
