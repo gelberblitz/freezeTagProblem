@@ -152,6 +152,38 @@ public class Solve {
                         break;
                     }
                 }
+
+                boolean found = false;
+                Robot x;
+                List<Integer> historyOfBadestPath = new ArrayList<>();
+                Robot currRob = maxDistanceRobot.clone();
+                historyOfBadestPath.add(Integer.valueOf(currRob.id));
+
+                while(!found){
+                    int idOfNext = Integer.parseInt(currRob.history.get(0).substring(16,17));
+
+                    x = findRobotById(currentShortestSolution, idOfNext);
+
+                    if(!x.history.get(1).substring(14,15)
+                            .equals(currRob.id)){
+                        for(int i = x.history.size()-2; i > 0; i--){
+                            historyOfBadestPath.add(Integer.valueOf(x.history.get(i).substring(14,15)));
+                        }
+                    }
+
+                    historyOfBadestPath.add(idOfNext);
+
+                    currRob = findRobotById(currentShortestSolution, idOfNext);
+
+
+                    if(String.valueOf(idOfNext).equals("0")){
+                        found = true;
+                    }
+                }
+
+
+
+
                 //verschiebe den längsten roboter
                 int counter = 0;
 
@@ -216,14 +248,16 @@ public class Solve {
 
                 // hole aufwachkette
                 // id von dem aufweckenden
-                String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
+                //String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
 
-                String secondBadestRoboter = "";
+                String secondBadestRoboter = String.valueOf(historyOfBadestPath.get(1));
+                /*
                 for (Robot r : allRobotsAsListSortedBackwards) {
                     if (r.id.equals(idAufweckenderRoboter)) {
                         secondBadestRoboter = r.history.get(r.history.size() - 2).substring(14, 15);
                     }
                 }
+                 */
 
                 Robot secondBadestRobot = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRoboter));
                 secondBadestRobot.position.fromAngleToPosition(secondBadestRobot.position.asAngel() + 1);
@@ -267,14 +301,16 @@ public class Solve {
                 }
 
                 // hole root roboter
-                String rootRobot = "";
-                for (Robot r : allRobotsAsListSortedBackwards) {
+                String rootRobot =  String.valueOf(historyOfBadestPath.get(historyOfBadestPath.size()-2));
+                /*for (Robot r : allRobotsAsListSortedBackwards) {
                     if (r.id.equals(idAufweckenderRoboter)) {
                         if (r.history.get(0).contains("Awaked by robot 0") || r.history.get(0).contains("Initial")) {
                             rootRobot = r.id;
                         }
                     }
                 }
+
+                 */
                 Robot rootRoboter = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRobot));
                 rootRoboter.position.fromAngleToPosition(rootRoboter.position.asAngel() + 1);
 
@@ -447,14 +483,16 @@ public class Solve {
                 // bis hier ging alles
 
                 // suche den nächstkleineren Roboter, der rMaxDistance aufgeweckt hat aus der Liste list
-                String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
-
-                String secondBadestRoboter = "";
+                //String idAufweckenderRoboter = maxDistanceRobot.history.stream().toList().get(0).substring(16, 17);
+                /*String secondBadestRoboter = "";
                 for (Robot r : allRobotsAsListSortedBackwards) {
                     if (r.id.equals(idAufweckenderRoboter)) {
                         secondBadestRoboter = r.history.get(r.history.size() - 2).substring(14, 15);
                     }
                 }
+                 */
+
+                String secondBadestRoboter = String.valueOf(historyOfBadestPath.get(1));
 
                 Robot secondBadestRobot = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(secondBadestRoboter));
                 secondBadestRobot.position.fromAngleToPosition(secondBadestRobot.position.asAngel() + 1);
@@ -518,8 +556,8 @@ public class Solve {
                 }
 
                 // hole root roboter
-                String rootRobot = "";
-                if (idAufweckenderRoboter.equals("0")) {
+                String rootRobot = String.valueOf(historyOfBadestPath.get(historyOfBadestPath.size()-2));
+                /*if (idAufweckenderRoboter.equals("0")) {
                     for (Robot r : allRobotsAsListSortedBackwards) {
                         if (r.id.equals(idAufweckenderRoboter)) {
                             rootRobot = r.history.get(1).substring(14, 15);
@@ -534,6 +572,7 @@ public class Solve {
                         }
                     }
                 }
+                 */
                 Robot rootRoboter = rekMap.getAllRobots().stream().toList().get(Integer.parseInt(rootRobot));
                 rootRoboter.position.fromAngleToPosition(rootRoboter.position.asAngel() + 1);
 
@@ -589,9 +628,6 @@ public class Solve {
                         // setze den wert wieder zurück
                         resetRekMap(rekMap, rootRoboter.id);
                     }
-
-                    // -> es gibt keine schlechtere Instanz
-                    //resetRekMap(rekMap, rootRoboter.id);
                 }
             }
             return currentShortestSolution;
@@ -1037,9 +1073,6 @@ public class Solve {
             }
 
         }
-
-
-
 
         List<Robot> rekMapAngels = rekMap.getAllRobots().stream().toList();
         rekMapAngels.forEach(rekMapAngel -> {angleFromWorstCase.add(rekMapAngel.position.asAngel());});
