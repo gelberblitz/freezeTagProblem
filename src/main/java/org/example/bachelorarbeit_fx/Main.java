@@ -95,9 +95,13 @@ public class Main extends Application {
                 solve.setForImage(stage, initialRobots, circle, pane);
                 solve.run();
 
+                /*
                 if(solve.mapShortestSol.getLongestMovedDistance() >= 3.3511){
                     buildScene(stage, solve, initialRobots, circle);
                 }
+
+                 */
+                buildScene(stage, solve, initialRobots, circle);
                 stage.show();
 
 
@@ -148,7 +152,7 @@ public class Main extends Application {
         }
 
         double wc_zahl = solve.mapShortestSol.getLongestMovedDistance();
-        if(wc_zahl >= 3.352){
+        if(wc_zahl >= 3.5){
             listOffBestSolutions.put(counter, wc_zahl);
         }
 
@@ -164,7 +168,7 @@ public class Main extends Application {
         });
 
 
-        Text zahlText = new Text("WC Laenge: " + String.valueOf(wc_zahl));
+        Text zahlText = new Text("Lokale WC Länge: " + String.valueOf(wc_zahl));
 
         zahlText.setTextAlignment(TextAlignment.LEFT);
         zahlText.setX(pane.getWidth() - 590);
@@ -229,10 +233,10 @@ public class Main extends Application {
         });
 
 
-        Text zahlText = new Text("WC Laenge: " + String.valueOf(wc_zahl));
+        Text zahlText = new Text("WC Länge: " + String.valueOf(wc_zahl));
 
         zahlText.setTextAlignment(TextAlignment.LEFT);
-        zahlText.setX(pane.getWidth() - 590);
+        zahlText.setX(pane.getWidth() - 700);
         zahlText.setY(pane.getHeight() - 10);
         zahlText.setStyle("-fx-font-size: 20px; -fx-fill: black;");
 

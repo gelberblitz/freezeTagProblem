@@ -59,13 +59,13 @@ public class RobotMap {
         return getSleepingRobots().isEmpty();
     }
 
-    public void move(String prefix, String robotId, String targetId) {
+    public void move(String robotId, String targetId) {
 
         Robot robot = robots.get(robotId);
         Robot target = robots.get(targetId);
 
         // robot move to target
-        robot.move(prefix, target);
+        robot.move(target);
 
         // target awakes
         target.awake(robot);

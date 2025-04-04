@@ -66,8 +66,7 @@ public class Robot extends Circle
     }
 
     // just for debug
-    public void move(String prefix, Robot other) {
-        // System.out.println(prefix+"move "+this.id+"  to "+other.id+"\n");
+    public void move(Robot other) {
         // update position and distance
         Line line = new Line();
         line.setStartX(300+(this.position.x*250));

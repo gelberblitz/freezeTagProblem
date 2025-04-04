@@ -67,21 +67,56 @@ public class RobotDistributor {
         return angles;
     }
 
+    public static List<Double> symmetrischeVerteilung(int n, int sampleSize) {
+        List<Double> angles = new ArrayList<>();
+
+        for(int j = 0; j < sampleSize; j++){
+            // Setze den ersten Winkel auf 0
+            angles.add(0.0);
+
+            // Erstelle n-1 zufällige Winkel und füge deren symmetrische Gegenstücke hinzu
+            Random random = new Random();
+            for (int i = 0; i < (n - 1) / 2; i++) {
+                // Zufälligen Winkel zwischen 0 und 180 wählen (da wir symmetrisch sind)
+                double angle = random.nextDouble() * 180;
+
+                // Füge den Winkel und seinen symmetrischen Gegenpart hinzu
+                angles.add(angle);
+                angles.add(-angle);
+            }
+
+            // Falls n ungerade ist, fügen wir einen zufälligen Winkel hinzu
+            if ((n - 1) % 2 != 0) {
+                double angle = random.nextDouble() * 180;
+                angles.add(angle);  // Fügt den Winkel hinzu, ohne ein symmetrisches Gegenstück, da wir nur n-1 Winkel benötigen.
+            }
+        }
+
+        return angles;
+    }
+
 
     public static void main(String[] args) {
-        int n = 5;
-        int sampleSize = 1000/4;
+        int n = 7;
+        int overallSize = 301;
+        int sampleSize = 12/4;
 
-        List<Double> gleichVerteilteWinkel = gleichverteilung(n, sampleSize);
+        List<Double> gleichVerteilteWinkel = gleichverteilung(n, 1);
         List<Double> zufallVerteilteWinkel = zufallsverteilung(n, sampleSize);
         List<Double> clusterVerteilteWinkel = clustering(n, 2, sampleSize);
+        List<Double> symmetrischVerteilteWinkel = symmetrischeVerteilung(n, sampleSize);
         List<Double> mathematischVerteilteWinkel = mathematischVerteilung(n, sampleSize);
 
-        String dateiName = System.getProperty("user.home") + "/Desktop/_1000.txt";
+        String dateiName = System.getProperty("user.home") + "/Desktop/7_13.txt";
 
         try(BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dateiName)))){
             for(Double zahl : gleichVerteilteWinkel){
                 writer.write(zahl.toString());
+                writer.newLine();
+            }
+
+            for (Double v : symmetrischVerteilteWinkel) {
+                writer.write(v.toString());
                 writer.newLine();
             }
 
