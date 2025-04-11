@@ -112,7 +112,7 @@ public class Main extends Application {
 
         // enzeit
         long end = System.currentTimeMillis();
-        System.out.println("Dauer der Berechnung: "  + ((end - startZeit)/1000) + "Sekunden");
+        System.out.println("Dauer der Berechnung: "  + ((end - startZeit)) + "ms");
 
         System.out.println("ES GIBT " + listOffBestSolutions.size() + " Lösungen, die schlechter als die Gleichverteilung sind");
         for (Integer key : listOffBestSolutions.keySet()) {
