@@ -20,6 +20,7 @@ public class Position {
     }
 
 
+    // aktualisiere die Position des Roboters
     public double update(Position other) {
         double distance = distance(other);
 
@@ -37,11 +38,13 @@ public class Position {
         return x+","+y;
     }
 
+    // gibt die Position als Winkel aus
     public double asAngel() {
         double angle = Math.toDegrees(Math.atan2(y, x));
         return angle;
     }
 
+    // Erstellt eine Position anhand des Winkels
     public void fromAngleToPosition(double angle) {
         // deg to rad
         this.x = Math.cos(angle*Math.PI/180.0);

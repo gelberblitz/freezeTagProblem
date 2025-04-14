@@ -33,7 +33,6 @@ public class Robot extends Circle
         if (!sleeping) history.add("Initial running robot");
     }
 
-    // "1", true, 0, new ArrayList<>(), new Position(0.0, 0.0)
     public Robot(String id, boolean sleeping, double distanceMoved ,ArrayList<String> history, ArrayList<Line> listeLines ,Position position) {
         super(position.x, position.y, 8);
         this.position = new Position(position.x, position.y);
@@ -46,6 +45,7 @@ public class Robot extends Circle
         color = getRandomColor();
         setFill(color);
     }
+
     public Paint getColor(){
         return this.color;
     }
@@ -57,6 +57,7 @@ public class Robot extends Circle
         return Color.color(red, green, blue);
     }
 
+    // methode um einen Roboter zu aktivieren und speichert die ID von dem Roboter, von dem er aktiviert wurde
     public void awake(Robot mover) {
         this.sleeping = false;
         // robot being awaked by another robot start with its distance
@@ -65,7 +66,7 @@ public class Robot extends Circle
         history.add("Awaked by robot "+mover.id+" with distance "+mover.distanceMoved);
     }
 
-    // just for debug
+    // Roboter läuft von aktueller Position zu other
     public void move(Robot other) {
         // update position and distance
         Line line = new Line();
@@ -83,10 +84,6 @@ public class Robot extends Circle
         distanceMoved += distance;
     }
 
-    public void updatePosition(Position position){
-        this.position.y = position.y;
-        this.position.x = position.x;
-    }
 
     public String toString() {
         return "Robot " +
@@ -97,6 +94,7 @@ public class Robot extends Circle
                 " distanceMoved=" + distanceMoved;
     }
 
+    // kopiert den Roboter
     public Robot clone() {
         return new Robot(this.id, this.sleeping, this.distanceMoved, (ArrayList<String>)history.clone(), (ArrayList<Line>)listeLines.clone(),
                 new Position(position.x, position.y));

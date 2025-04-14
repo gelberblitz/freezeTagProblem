@@ -40,18 +40,19 @@ public class Main extends Application {
         launch();
     }
 
+    // starte prozess für JAVA FX
     @Override
     public void start(Stage stage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("application.fxml"));
         Parent root = loader.load();
         pane = (Pane) root;
 
-        // Window
+        // fenster
         double paneWidth = 600;
         double paneHeight = 600;
         pane.setPrefSize(paneWidth, paneHeight);
 
-        // Values to calc circle
+        // Einheitskreis
         double radius = 600 / 2 - 50;
         double centerX1 = 600 / 2;
         double centerX2 = paneHeight / 2;
@@ -70,7 +71,7 @@ public class Main extends Application {
         // startzeit
         long startZeit = System.currentTimeMillis();
 
-        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("C:/Users/sfroehlich/Desktop/freezetag/instance/5_1.txt"))){
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("C:/Users/sfroehlich/Desktop/freezetag_v2/instance/5_1.txt"))){
             sampleSize = Integer.parseInt(bufferedReader.readLine());
             numbRoboter = Integer.parseInt(bufferedReader.readLine());
 
@@ -86,21 +87,18 @@ public class Main extends Application {
                     initialRobots.createRobot(Double.parseDouble(bufferedReader.readLine()));
                 }
 
+                // initialisierungsschritte
                 StartingController controller = loader.getController();
                 controller.setPane(pane);
                 controller.start();
 
+                // starte die eigentliche berechnung
                 Solve solve = new Solve();
                 solve.setInitialRobotsAll(initialRobots);
                 solve.setForImage(stage, initialRobots, circle, pane);
                 solve.run();
 
-                /*
-                if(solve.mapShortestSol.getLongestMovedDistance() >= 3.3511){
-                    buildScene(stage, solve, initialRobots, circle);
-                }
-
-                 */
+                // gebe Abbild der Instanz aus
                 buildScene(stage, solve, initialRobots, circle);
                 stage.show();
 
@@ -113,13 +111,9 @@ public class Main extends Application {
         // enzeit
         long end = System.currentTimeMillis();
         System.out.println("Dauer der Berechnung: "  + ((end - startZeit)) + "ms");
-
-        System.out.println("ES GIBT " + listOffBestSolutions.size() + " Lösungen, die schlechter als die Gleichverteilung sind");
-        for (Integer key : listOffBestSolutions.keySet()) {
-            System.out.println(key+1);
-        }
     }
 
+    // Male das Szenario für die Abbildung
     void buildScene(Stage stage, Solve solve, RobotMap initialRobots, Circle circle) {
         RobotMap mapShortestSol = solve.getMapShortestSol();
         List<Paint> colorRobot = new ArrayList<>();
@@ -186,71 +180,7 @@ public class Main extends Application {
         saveStageAsImage(stage);
     }
 
-    void buildScene2(Stage stage, RobotMap mapShortestSol, RobotMap initialRobots, Circle circle) {
-        List<Paint> colorRobot = new ArrayList<>();
-        List<Line> lines = new ArrayList<>();
-        List<Paint> colorList = new ArrayList<>();
-        for (Map.Entry<String, Robot> entry : mapShortestSol.robots.entrySet()) {
-            Robot robot = entry.getValue();
-            Paint stroke = robot.getColor();
-            colorList.add(stroke);
-
-            colorRobot.add(stroke);
-            List<Line> listeLines = robot.listeLines;
-            for (Line line : listeLines) {
-                line.setStroke(stroke);
-                line.setStrokeWidth(5);
-                lines.add(line);
-            }
-        }
-
-        // speicher die roboter in einer liste
-        List<Robot> robots = new ArrayList<>();
-        copyRobotsInList(initialRobots, robots);
-
-        // roboter werden der szene hinzugefügt
-        drawRobots(robots, colorRobot);
-
-        //List<Line> lines = solve.listeLines;
-        for(Line line : lines){
-            pane.getChildren().add(line);
-        }
-
-        double wc_zahl = mapShortestSol.getLongestMovedDistance();
-        if(wc_zahl >= 3.352){
-            listOffBestSolutions.put(counter, wc_zahl);
-        }
-
-
-        initialRobots.getAllRobots().stream().forEach(r -> {
-            Text roboPosition = new Text("" + Math.round((r.position.asAngel()*(-1000)) / 1000));
-
-            roboPosition.setTextAlignment(TextAlignment.LEFT);
-            roboPosition.setX(300 + (r.position.x * 250) + 10);
-            roboPosition.setY(300 + (r.position.y*250)+10);
-            roboPosition.setStyle("-fx-font-size: 20px; -fx-fill: black;");
-            pane.getChildren().add(roboPosition);
-        });
-
-
-        Text zahlText = new Text("WC Länge: " + String.valueOf(wc_zahl));
-
-        zahlText.setTextAlignment(TextAlignment.LEFT);
-        zahlText.setX(pane.getWidth() - 700);
-        zahlText.setY(pane.getHeight() - 10);
-        zahlText.setStyle("-fx-font-size: 20px; -fx-fill: black;");
-
-        // Füge den Text der Pane hinzu
-        pane.getChildren().add(zahlText);
-
-        pane.getChildren().add(circle);
-
-        stage.setResizable(false);
-        stage.setTitle("Freeze Tag Problem");
-        //stage.setScene(new Scene(root, paneWidth, paneHeight));
-        saveStageAsImage(stage);
-    }
-
+    // kopiere Roboter aus der Map in eine Liste
     private static void copyRobotsInList(RobotMap initialRobots, List<Robot> robots) {
         robots.add(new Robot("99", true, 0, new ArrayList<>(), new ArrayList<>(),
                 new Position(0, 0)));
@@ -260,6 +190,7 @@ public class Main extends Application {
         }
     }
 
+    // Male Roboter auf den Einheitskreis
     private void drawRobots(List<Robot> robots, List<Paint> colorRobot) {
         int counter = 0;
         for (Robot robot : robots) {
@@ -297,93 +228,3 @@ public class Main extends Application {
         }
     }
 }
-
-/*
-best solutions
-545
-617
-378
-970
-382
- */
-
-/*
-public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("application.fxml"));
-        Parent root = loader.load();
-        pane = (Pane) root;
-
-        // Window
-        double paneWidth = 600;
-        double paneHeight = 600;
-        pane.setPrefSize(paneWidth, paneHeight);
-
-        // Values to calc circle
-        double radius = paneWidth / 2 - 50;
-        double centerX1 = paneWidth / 2;
-        double centerX2 = paneHeight / 2;
-
-        Circle circle = new Circle(centerX1, centerX2, radius);
-        circle.setStroke(Color.BLACK);
-        circle.setFill(null);
-
-        // Scanner für Eingabe
-        Scanner scanner = new Scanner(System.in);
-        int anzahlRoboter = scanner.nextInt();
-        size = anzahlRoboter;
-
-        // lese die Winkel-Positionen der Roboter ein
-        RobotMap initialRobots = new RobotMap();
-        for(int i = 0; i < anzahlRoboter; i++) {
-            initialRobots.createRobot(scanner.nextDouble());
-        }
-
-        StartingController controller = loader.getController();
-        controller.setPane(pane);
-        controller.start();
-
-        Solve solve = new Solve();
-        solve.setInitialRobotsAll(initialRobots);
-        solve.run();
-
-
-
-        RobotMap mapShortestSol = solve.getMapShortestSol();
-        List<Paint> colorRobot = new ArrayList<>();
-        List<Line> lines = new ArrayList<>();
-        List<Paint> colorList = new ArrayList<>();
-        for (Map.Entry<String, Robot> entry : mapShortestSol.robots.entrySet()) {
-            Robot robot = entry.getValue();
-            Paint stroke = robot.getColor();
-            colorList.add(stroke);
-
-            colorRobot.add(stroke);
-            List<Line> listeLines = robot.listeLines;
-            for (Line line : listeLines) {
-                line.setStroke(stroke);
-                line.setStrokeWidth(5);
-                lines.add(line);
-            }
-        }
-
-        // speicher die roboter in einer liste
-        List<Robot> robots = new ArrayList<>();
-        copyRobotsInList(initialRobots, robots);
-
-        // roboter werden der szene hinzugefügt
-        drawRobots(robots, colorRobot);
-
-        //List<Line> lines = solve.listeLines;
-        for(Line line : lines){
-            pane.getChildren().add(line);
-        }
-
-        pane.getChildren().add(circle);
-
-        stage.setResizable(false);
-        stage.setTitle("Freeze Tag Problem");
-        stage.setScene(new Scene(root, paneWidth, paneHeight));
-        saveStageAsImage(stage);
-        stage.show();
-    }
- */

@@ -4,17 +4,22 @@ import java.util.*;
 
 public class RobotMap {
 
-    // all robots
+    // alle Roboter
     Map<String, Robot> robots = new HashMap<>();
 
-    // copies:
+    // inaktive Roboter
     Map<String, Robot> sleeping = new HashMap<>();
+
+    // aktive Roboter
     Map<String, Robot> running = new HashMap<>();
 
+    // Erstelle Roboter im Nullpunkt
     public void createInitialRobot() {
         createRobot(0,0);
     }
 
+
+    // Konstruktorkette zum Erstellen von Robotern
     public void createRobot(double x, double y) {
         // create robot at position with id and state (first running - all other sleeping)
         createRobot(new Position(x, y));
@@ -47,34 +52,33 @@ public class RobotMap {
         return running.values();
     }
 
-    public void setRunningRobots(Map<String, Robot> robots) {
-        running = robots;
-    }
-
     public Collection<Robot> getSleepingRobots() {
         return sleeping.values();
     }
 
+    // wenn alle Roboter aktiviert wurden ist das Szenario gelöst
     public boolean isSolved() {
         return getSleepingRobots().isEmpty();
     }
 
+    // laufe mit robotId zu targetId
     public void move(String robotId, String targetId) {
 
         Robot robot = robots.get(robotId);
         Robot target = robots.get(targetId);
 
-        // robot move to target
+        // laufe zu target
         robot.move(target);
 
-        // target awakes
+        // aktiviere target
         target.awake(robot);
 
-        // update copies
+        // aktualisiere die Listen
         sleeping.remove(target.id);
         running.put(target.id, target);
     }
 
+    // gebe aktuell zurückgelegte Distanz zurück
     public double getLongestMovedDistance() {
         double longtestDistance = 0.0;
         for (Robot robot : robots.values()) {
@@ -94,6 +98,7 @@ public class RobotMap {
         return sb.toString();
     }
 
+    //kopiere RobotMap
     public RobotMap clone() {
         RobotMap cloneMap = new RobotMap();
         Robot cloneRobot;
@@ -109,12 +114,4 @@ public class RobotMap {
         return cloneMap;
     }
 
-
-    public Map<String, Robot> listToMap(Collection<Robot> runningList) {
-        Map<String, Robot> robots = new HashMap<>();
-        for (Robot robot : runningList) {
-            robots.put(robot.id, robot);
-        }
-        return robots;
-    }
 }

@@ -7,6 +7,7 @@ import java.util.Random;
 
 public class RobotDistributor {
 
+    // Klasse um eine Menge an Instanzen mit unterschiedlichen Verteilungen zu erstellen
 
     public static List<Double> gleichverteilung(int n, int sampleSize) {
         List<Double> angles = new ArrayList<>();
@@ -71,24 +72,16 @@ public class RobotDistributor {
         List<Double> angles = new ArrayList<>();
 
         for(int j = 0; j < sampleSize; j++){
-            // Setze den ersten Winkel auf 0
             angles.add(0.0);
-
-            // Erstelle n-1 zufällige Winkel und füge deren symmetrische Gegenstücke hinzu
             Random random = new Random();
             for (int i = 0; i < (n - 1) / 2; i++) {
-                // Zufälligen Winkel zwischen 0 und 180 wählen (da wir symmetrisch sind)
                 double angle = random.nextDouble() * 180;
-
-                // Füge den Winkel und seinen symmetrischen Gegenpart hinzu
                 angles.add(angle);
                 angles.add(-angle);
             }
-
-            // Falls n ungerade ist, fügen wir einen zufälligen Winkel hinzu
             if ((n - 1) % 2 != 0) {
                 double angle = random.nextDouble() * 180;
-                angles.add(angle);  // Fügt den Winkel hinzu, ohne ein symmetrisches Gegenstück, da wir nur n-1 Winkel benötigen.
+                angles.add(angle);
             }
         }
 
@@ -96,6 +89,7 @@ public class RobotDistributor {
     }
 
 
+    // erstelle x Instanzen mit den vorgegebenen Verteilungen
     public static void main(String[] args) {
         int n = 7;
         int overallSize = 301;
